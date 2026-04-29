@@ -1,6 +1,6 @@
 # Contract: Vault Tool Functions
 
-**Branch**: `002-nexus-agent` | **Date**: 2026-04-29
+**Branch**: `001-nexus-agent` | **Date**: 2026-04-29
 **Phase**: 1 — Design & Contracts
 **Module**: `src/nexus/tools/vault.py`
 

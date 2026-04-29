@@ -1,6 +1,6 @@
 # Quickstart: Agente Nexus — LLM-Wiki
 
-**Branch**: `002-nexus-agent` | **Date**: 2026-04-29
+**Branch**: `001-nexus-agent` | **Date**: 2026-04-29
 
 ---
 

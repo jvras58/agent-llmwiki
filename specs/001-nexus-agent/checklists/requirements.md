@@ -1,4 +1,4 @@
-# Specification Quality Checklist: Agente Nexus — Identidade, Memória e Resiliência
+# Specification Quality Checklist: Agente Nexus — LLM-Wiki com Identidade, Memória e Resiliência de I/O
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-04-29
@@ -32,5 +32,8 @@
 ## Notes
 
 - All items pass on first validation pass — spec is ready for `/speckit-clarify` or `/speckit-plan`
-- Edge cases include: empty file, permissions error, very large history, whitespace-only file
-- FR-006 explicitly covers path traversal, matching SC-005
+- This spec refines `specs/001-nexus-agent/spec.md` with two additions:
+  - Scenario 2 explicitly includes "learning logs" alongside memories
+  - The no-inference rule is stated as "not inferred" (stronger than "not invented")
+- 5 edge cases documented including vault-root absence and mid-path traversal
+- FR-007 and SC-005 explicitly cover path traversal at tool layer before I/O

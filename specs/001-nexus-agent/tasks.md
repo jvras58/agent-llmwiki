@@ -5,7 +5,7 @@ description: "Task list for Agente Nexus — LLM-Wiki implementation"
 
 # Tasks: Agente Nexus — LLM-Wiki com Identidade, Memória e Resiliência de I/O
 
-**Input**: Design documents from `specs/002-nexus-agent/`
+**Input**: Design documents from `specs/001-nexus-agent/`
 **Prerequisites**: plan.md ✅ | spec.md ✅ | research.md ✅ | data-model.md ✅ | contracts/vault-tools.md ✅
 
 **Tests**: Not requested — no test tasks generated.

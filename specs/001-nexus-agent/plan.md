@@ -1,7 +1,7 @@
 # Implementation Plan: Agente Nexus — LLM-Wiki
 
-**Branch**: `002-nexus-agent` | **Date**: 2026-04-29 | **Spec**: [spec.md](spec.md)
-**Input**: Feature specification from `specs/002-nexus-agent/spec.md`
+**Branch**: `001-nexus-agent` | **Date**: 2026-04-29 | **Spec**: [spec.md](spec.md)
+**Input**: Feature specification from `specs/001-nexus-agent/spec.md`
 
 ## Summary
 
@@ -48,7 +48,7 @@ Ollama/Llama 3 throughput — no numeric target required for v1
 ### Documentation (this feature)
 
 ```text
-specs/002-nexus-agent/
+specs/001-nexus-agent/
 ├── plan.md              # This file (/speckit-plan output)
 ├── research.md          # Phase 0 output
 ├── data-model.md        # Phase 1 output
