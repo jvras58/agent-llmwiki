@@ -1,89 +1,83 @@
+import logging
 from pathlib import Path
 
-from pydantic import BaseModel, field_validator, ValidationError
+from agentscope.message import TextBlock
+from agentscope.tool import ToolResponse
+from pydantic import ValidationError
 
-from nexus.config import VAULT_PATH
+from nexus.schemas import MemoryWriteArgs, VaultReadArgs
+from nexus.services.vault import (
+    VaultPathError,
+    append_memory,
+    read_document,
+)
+from nexus.tools._normalize import extract_str
 
-
-class VaultReadArgs(BaseModel):
-    path: str
-
-    @field_validator("path")
-    @classmethod
-    def validate_path(cls, v: str) -> str:
-        v = v.strip().lstrip("/")
-        if not v:
-            raise ValueError("O caminho não pode ser vazio.")
-        if ".." in v.split("/"):
-            raise ValueError("Path traversal ('..') não é permitido.")
-        return v
+logger = logging.getLogger(__name__)
 
 
-class MemoryWriteArgs(BaseModel):
-    content: str
-
-    @field_validator("content")
-    @classmethod
-    def validate_content(cls, v: str) -> str:
-        v = v.strip()
-        if not v:
-            raise ValueError("O conteúdo da memória não pode ser vazio.")
-        if len(v) > 2000:
-            raise ValueError("Conteúdo excede 2000 caracteres.")
-        return v
+def _text_response(text: str) -> ToolResponse:
+    return ToolResponse(content=[TextBlock(type="text", text=text)])
 
 
-def _safe_path(relative: str) -> Path:
-    target = (VAULT_PATH / relative).resolve()
-    if not target.is_relative_to(VAULT_PATH):
-        raise ValueError(
-            f"Acesso negado: o caminho '{relative}' está fora do vault permitido."
-        )
-    return target
+def _validation_error_message(exc: ValidationError) -> str:
+    first_error = exc.errors()[0]["msg"]
+    return f"Erro: argumento inválido — {first_error}"
 
 
-def read_vault(path: str) -> str:
-    """
-    Lê arquivos do vault do Obsidian.
-    Uso sugerido: 'docs/perfil' para identidade, 'memoria/historico' para histórico.
-    Retorna o conteúdo do arquivo como texto ou uma mensagem de erro clara.
-    """
-    try:
-        args = VaultReadArgs(path=path)
-    except ValidationError as exc:
-        first_error = exc.errors()[0]["msg"]
-        return f"Erro: argumento inválido — {first_error}"
-    try:
-        full_path = _safe_path(f"{args.path}.md")
-        return full_path.read_text(encoding="utf-8")
-    except ValueError as exc:
-        return f"Erro: {exc}"
-    except FileNotFoundError:
-        return f"Erro: Documento '{args.path}.md' não encontrado no vault."
-    except PermissionError:
-        return f"Erro: Sem permissão para ler '{args.path}.md'."
-    except OSError as exc:
-        return f"Erro de I/O ao ler '{args.path}': {exc}"
+def make_read_vault(vault_root: Path):
+    def read_vault(path: str) -> ToolResponse:
+        """
+        Lê arquivos do vault do Obsidian.
+        Uso sugerido: 'docs/perfil' para identidade, 'memoria/historico' para histórico.
+        Retorna o conteúdo do arquivo como texto ou uma mensagem de erro clara.
+        """
+        try:
+            args = VaultReadArgs(path=extract_str(path))
+        except ValidationError as exc:
+            return _text_response(_validation_error_message(exc))
+
+        try:
+            content = read_document(vault_root, args.path)
+        except VaultPathError as exc:
+            return _text_response(f"Erro: {exc}")
+        except FileNotFoundError:
+            return _text_response(
+                f"Erro: Documento '{args.path}.md' não encontrado no vault."
+            )
+        except PermissionError:
+            return _text_response(f"Erro: Sem permissão para ler '{args.path}.md'.")
+        except OSError as exc:
+            logger.exception("Falha de I/O lendo %s", args.path)
+            return _text_response(f"Erro de I/O ao ler '{args.path}': {exc}")
+
+        return _text_response(content)
+
+    return read_vault
 
 
-def update_memory(content: str) -> str:
-    """
-    Adiciona uma nova linha à memória do agente no arquivo memoria/historico.md.
-    Use sempre que o usuário pedir para anotar, lembrar ou registrar algo importante.
-    O conteúdo é adicionado como um bullet point Markdown.
-    """
-    try:
-        args = MemoryWriteArgs(content=content)
-    except ValidationError as exc:
-        first_error = exc.errors()[0]["msg"]
-        return f"Erro: argumento inválido — {first_error}"
-    try:
-        history_path = VAULT_PATH / "memoria" / "historico.md"
-        history_path.parent.mkdir(parents=True, exist_ok=True)
-        with history_path.open("a", encoding="utf-8") as f:
-            f.write(f"\n- {args.content}")
-        return "Memória atualizada com sucesso."
-    except PermissionError:
-        return "Erro ao escrever memória: sem permissão para acessar o arquivo."
-    except OSError as exc:
-        return f"Erro ao escrever memória: {exc}"
+def make_update_memory(vault_root: Path):
+    def update_memory(content: str) -> ToolResponse:
+        """
+        Adiciona uma nova linha à memória do agente no arquivo memoria/historico.md.
+        Use sempre que o usuário pedir para anotar, lembrar ou registrar algo importante.
+        O conteúdo é adicionado como um bullet point Markdown.
+        """
+        try:
+            args = MemoryWriteArgs(content=extract_str(content))
+        except ValidationError as exc:
+            return _text_response(_validation_error_message(exc))
+
+        try:
+            append_memory(vault_root, args.content)
+        except PermissionError:
+            return _text_response(
+                "Erro ao escrever memória: sem permissão para acessar o arquivo."
+            )
+        except OSError as exc:
+            logger.exception("Falha de I/O ao gravar memória")
+            return _text_response(f"Erro ao escrever memória: {exc}")
+
+        return _text_response("Memória atualizada com sucesso.")
+
+    return update_memory
