@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class VaultReadArgs(BaseModel):
@@ -13,6 +13,31 @@ class VaultReadArgs(BaseModel):
         if ".." in v.split("/"):
             raise ValueError("Path traversal ('..') não é permitido.")
         return v
+
+
+class NexusReply(BaseModel):
+    """Resposta estruturada do Nexus, validada a cada turno do agente."""
+
+    answer: str = Field(
+        description=(
+            "Resposta final ao usuário, em português, em prosa natural. "
+            "Sem JSON, sem chamadas de função, sem blocos de código."
+        ),
+    )
+    sources_consulted: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Lista dos caminhos do Vault que foram lidos via read_vault neste turno "
+            "(ex.: ['docs/perfil']). Lista vazia se nenhum arquivo foi consultado."
+        ),
+    )
+    wrote_memory: bool = Field(
+        default=False,
+        description=(
+            "True se update_memory foi chamado com sucesso neste turno. "
+            "False caso contrário."
+        ),
+    )
 
 
 class MemoryWriteArgs(BaseModel):
