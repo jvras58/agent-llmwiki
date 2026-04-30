@@ -66,24 +66,23 @@ Nexus é um agente de IA local baseado na arquitetura **LLM-Wiki**: em vez de um
 
 ```
 agent-llmwiki/
-├── src/nexus/
-│   ├── __init__.py      # API pública (build_nexus_agent, run_cli, NexusSettings)
-│   ├── __main__.py      # python -m nexus
-│   ├── cli.py           # REPL assíncrono (loop MsgHub + sentinelas de saída)
-│   ├── settings.py      # NexusSettings (pydantic-settings, prefixo NEXUS_)
-│   ├── prompts.py       # SYSTEM_PROMPT do Nexus
-│   ├── agents.py        # build_nexus_agent() — factory do ReActAgent
-│   ├── schemas.py       # VaultReadArgs, MemoryWriteArgs (Pydantic)
+├── src/nexus/                # PEP 420 namespace package (sem __init__.py)
+│   ├── __main__.py           # python -m nexus
+│   ├── cli.py                # REPL assíncrono (loop MsgHub + sentinelas de saída)
+│   ├── settings.py           # NexusSettings (pydantic-settings, prefixo NEXUS_)
+│   ├── prompts.py            # build_system_prompt(settings) — interpolado
+│   ├── agents.py             # build_nexus_agent(settings) — factory do ReActAgent
+│   ├── schemas.py            # VaultReadArgs, MemoryWriteArgs (Pydantic)
 │   ├── services/
-│   │   └── vault.py     # I/O puro: read_document, append_memory, _safe_path
+│   │   └── vault.py          # I/O puro: read_document, append_memory, _safe_path
 │   └── tools/
-│       ├── __init__.py  # register_default_tools(toolkit, vault_root)
-│       ├── _normalize.py# extract_str() (quirks do llama3.2)
-│       └── vault.py     # tools que retornam ToolResponse
+│       ├── _normalize.py     # extract_str() (quirks do llama3.2)
+│       ├── registry.py       # register_default_tools(toolkit, settings)
+│       └── vault.py          # factories make_read_vault / make_update_memory
 ├── meu_vault/
-│   ├── docs/perfil.md   # Identidade do Nexus
+│   ├── docs/perfil.md        # Identidade do Nexus
 │   └── memoria/historico.md
-├── pyproject.toml
+├── pyproject.toml            # build-backend uv_build com namespace = true
 └── uv.lock
 ```
 
@@ -138,6 +137,8 @@ Tudo é opcional — os defaults funcionam para o setup local padrão. Variávei
 | Variável | Default | Descrição |
 |---|---|---|
 | `NEXUS_VAULT_PATH` | `./meu_vault` | Diretório raiz do Vault |
+| `NEXUS_MEMORY_FILE` | `memoria/historico.md` | Caminho da memória append-only (relativo ao vault) |
+| `NEXUS_PROFILE_DOC` | `docs/perfil` | Documento lido em perguntas de identidade |
 | `NEXUS_MODEL_NAME` | `llama3.2` | Modelo Ollama |
 | `NEXUS_OLLAMA_HOST` | (cliente Ollama) | Override do host (`http://host:11434`) |
 | `NEXUS_MAX_ITERS` | `5` | Iterações ReAct máximas por turno |

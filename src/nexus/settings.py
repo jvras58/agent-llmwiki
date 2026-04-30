@@ -16,6 +16,14 @@ class NexusSettings(BaseSettings):
         default=Path("./meu_vault"),
         description="Diretório raiz do Vault Obsidian — fonte de verdade do agente.",
     )
+    memory_file: Path = Field(
+        default=Path("memoria/historico.md"),
+        description="Arquivo de memória append-only, relativo ao vault_path.",
+    )
+    profile_doc: str = Field(
+        default="docs/perfil",
+        description="Documento de identidade lido em perguntas sobre 'quem é você'.",
+    )
     model_name: str = Field(
         default="llama3.2",
         description="Nome do modelo Ollama usado pelo ReActAgent.",

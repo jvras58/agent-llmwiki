@@ -3,9 +3,9 @@ from agentscope.formatter import OllamaChatFormatter
 from agentscope.model import OllamaChatModel
 from agentscope.tool import Toolkit
 
-from nexus.prompts import SYSTEM_PROMPT
+from nexus.prompts import build_system_prompt
 from nexus.settings import NexusSettings
-from nexus.tools import register_default_tools
+from nexus.tools.registry import register_default_tools
 
 
 def build_nexus_agent(settings: NexusSettings) -> ReActAgent:
@@ -22,11 +22,11 @@ def build_nexus_agent(settings: NexusSettings) -> ReActAgent:
     formatter = OllamaChatFormatter()
 
     toolkit = Toolkit()
-    register_default_tools(toolkit, settings.vault_root)
+    register_default_tools(toolkit, settings)
 
     return ReActAgent(
         name="Nexus",
-        sys_prompt=SYSTEM_PROMPT,
+        sys_prompt=build_system_prompt(settings),
         model=model,
         formatter=formatter,
         toolkit=toolkit,

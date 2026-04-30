@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 
 from agentscope.message import TextBlock
 from agentscope.tool import ToolResponse
@@ -11,6 +10,7 @@ from nexus.services.vault import (
     append_memory,
     read_document,
 )
+from nexus.settings import NexusSettings
 from nexus.tools._normalize import extract_str
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,9 @@ def _validation_error_message(exc: ValidationError) -> str:
     return f"Erro: argumento inválido — {first_error}"
 
 
-def make_read_vault(vault_root: Path):
+def make_read_vault(settings: NexusSettings):
+    vault_root = settings.vault_root
+
     def read_vault(path: str) -> ToolResponse:
         """
         Lê arquivos do vault do Obsidian.
@@ -56,10 +58,13 @@ def make_read_vault(vault_root: Path):
     return read_vault
 
 
-def make_update_memory(vault_root: Path):
+def make_update_memory(settings: NexusSettings):
+    vault_root = settings.vault_root
+    memory_file = settings.memory_file
+
     def update_memory(content: str) -> ToolResponse:
         """
-        Adiciona uma nova linha à memória do agente no arquivo memoria/historico.md.
+        Adiciona uma nova linha à memória do agente no arquivo de memória do vault.
         Use sempre que o usuário pedir para anotar, lembrar ou registrar algo importante.
         O conteúdo é adicionado como um bullet point Markdown.
         """
@@ -69,7 +74,9 @@ def make_update_memory(vault_root: Path):
             return _text_response(_validation_error_message(exc))
 
         try:
-            append_memory(vault_root, args.content)
+            append_memory(vault_root, memory_file, args.content)
+        except VaultPathError as exc:
+            return _text_response(f"Erro: {exc}")
         except PermissionError:
             return _text_response(
                 "Erro ao escrever memória: sem permissão para acessar o arquivo."
